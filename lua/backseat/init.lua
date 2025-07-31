@@ -20,7 +20,7 @@ function M.setup()
 	create_command_monitor()
 
 	vim.api.nvim_create_user_command("ShowCommandHistory", function()
-		for i, entry in ipairs(M.command_history) do
+		for i, entry in ipairs(M.get_recent_commands(10)) do
 			print(string.format("%d: [%s] %s", i, entry.mode, entry.command))
 		end
 	end, {})
