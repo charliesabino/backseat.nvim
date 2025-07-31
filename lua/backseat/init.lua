@@ -3,6 +3,30 @@ local M = {}
 M.command_history = {}
 M.instructions = "" -- Store user instructions
 
+-- Get the data directory for persisting instructions
+local data_dir = vim.fn.stdpath("data") .. "/backseat"
+local instructions_file = data_dir .. "/instructions.txt"
+
+-- Load saved instructions
+local function load_instructions()
+	vim.fn.mkdir(data_dir, "p") -- Create directory if it doesn't exist
+	local f = io.open(instructions_file, "r")
+	if f then
+		M.instructions = f:read("*all")
+		f:close()
+	end
+end
+
+-- Save instructions to file
+local function save_instructions()
+	vim.fn.mkdir(data_dir, "p") -- Create directory if it doesn't exist
+	local f = io.open(instructions_file, "w")
+	if f then
+		f:write(M.instructions)
+		f:close()
+	end
+end
+
 local function create_command_monitor()
 	vim.on_key(function(key)
 		if vim.fn.mode() == "n" then
@@ -16,6 +40,9 @@ local function create_command_monitor()
 end
 
 function M.setup()
+	-- Load saved instructions on setup
+	load_instructions()
+
 	vim.api.nvim_create_user_command("Blindspots", function()
 		-- Create a new buffer
 		local buf = vim.api.nvim_create_buf(false, true)
@@ -62,7 +89,8 @@ function M.setup()
 		vim.api.nvim_buf_set_name(buf, "Blindspots Instructions")
 
 		-- Set filetype for syntax highlighting
-		vim.api.nvim_buf_set_option(buf, "filetype", "markdown")
+		-- vim.api.nvim_buf_set_option(buf, "filetype", "markdown")
+		vim.api.nvim_set_option_value("filetype", "markdown", {})
 
 		-- Move cursor to the instructions area
 		if M.instructions == "" then
@@ -75,6 +103,7 @@ function M.setup()
 			callback = function()
 				local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
 				M.instructions = table.concat(lines, "\n")
+				save_instructions() -- Save to file when leaving buffer
 			end,
 		})
 
@@ -84,7 +113,8 @@ function M.setup()
 			callback = function()
 				local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
 				M.instructions = table.concat(lines, "\n")
-				vim.api.nvim_buf_set_option(buf, "modified", false)
+				save_instructions() -- Save to file when writing
+				vim.api.nvim_set_option_value("modified", false, {})
 				print("Blindspots instructions saved!")
 			end,
 		})
