@@ -1,7 +1,9 @@
 local M = {}
 
 function M.setup()
-	print("Hello")
+	vim.api.nvim_create_user_command("Blindspots", function()
+		print("Hello")
+	end, {})
 end
 
 return M
