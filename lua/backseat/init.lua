@@ -200,20 +200,18 @@ local function analyze_command_history()
 	end
 
 	local prompt = string.format(
-		[[You are a Neovim expert analyzing command patterns. Here are the user's instructions:
+		[[You are a Neovim expert. Your task is to analyze a list of recent commands and provide feedback based *only* on the user's instructions.
 
+-- User Instructions
 %s
 
-Here are the recent commands:
+-- Recent Commands
 %s
 
-Provide a brief analysis of inefficiencies or suggestions for improvement based on the patterns you see.
-
-Be incredibly terse.
-
-If the user provided instructions, then only make recommendations based on their instructions.
-
-If you do not have any feedback, then respond with only the words "No feedback".
+Analyze the commands against the instructions.
+- Provide feedback only for deviations from the instructions.
+- All feedback must be incredibly terse.
+- If there are no deviations or no feedback is necessary, respond with the exact phrase "No feedback".
 ]],
 		M.instructions,
 		table.concat(command_list, "\n")
