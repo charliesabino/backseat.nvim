@@ -2,6 +2,10 @@
 
 An AI-powered Neovim plugin that monitors your Vim habits and provides real-time feedback to help improve your workflow efficiency.
 
+
+https://github.com/user-attachments/assets/ec19bc33-ade4-4500-be2c-a83851d7c72d
+
+
 ## Table of Contents
 
 - [Features](#features)
