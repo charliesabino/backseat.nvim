@@ -6,15 +6,64 @@ M.instructions = "" -- Store user instructions
 M.config = {
 	api_key = nil,
 	analysis_interval = 300, -- 5 minutes in seconds
-	max_history_size = 1000,
+	max_history_size = 10000,
 	endpoint = "https://api.anthropic.com/v1/messages",
 	model = "claude-3-5-haiku-latest",
+	enable_monitoring = true, -- Allow disabling key monitoring for performance
 }
 
 -- Get the data directory for persisting instructions
 local data_dir = vim.fn.stdpath("data") .. "/backseat"
 local instructions_file = data_dir .. "/instructions.txt"
 local timer = vim.loop.new_timer()
+
+-- Cache for UTF8 validation to avoid repeated processing
+local utf8_cache = setmetatable({}, { __mode = "k" })
+
+function fixUTF8(s)
+	-- Check cache first
+	local cached = utf8_cache[s]
+	if cached then
+		return cached[1], cached[2]
+	end
+
+	-- For small strings, just filter out control characters
+	if #s < 50 then
+		local clean = s:gsub("[%c%z]", "")
+		utf8_cache[s] = { clean, {} }
+		return clean, {}
+	end
+
+	-- For larger strings, do full UTF8 validation
+	local p, len, invalid = 1, #s, {}
+	while p <= len do
+		if p == s:find("[%z\1-\127]", p) then
+			p = p + 1
+		elseif p == s:find("[\194-\223][\128-\191]", p) then
+			p = p + 2
+		elseif
+			p == s:find("\224[\160-\191][\128-\191]", p)
+			or p == s:find("[\225-\236][\128-\191][\128-\191]", p)
+			or p == s:find("\237[\128-\159][\128-\191]", p)
+			or p == s:find("[\238-\239][\128-\191][\128-\191]", p)
+		then
+			p = p + 3
+		elseif
+			p == s:find("\240[\144-\191][\128-\191][\128-\191]", p)
+			or p == s:find("[\241-\243][\128-\191][\128-\191][\128-\191]", p)
+			or p == s:find("\244[\128-\143][\128-\191][\128-\191]", p)
+		then
+			p = p + 4
+		else
+			s = s:sub(1, p - 1) .. s:sub(p + 1)
+			table.insert(invalid, p)
+		end
+	end
+
+	-- Cache the result
+	utf8_cache[s] = { s, invalid }
+	return s, invalid
+end
 
 -- Load saved instructions
 local function load_instructions()
@@ -37,18 +86,43 @@ local function save_instructions()
 end
 
 local function create_command_monitor()
-	vim.on_key(function(key)
-		if vim.fn.mode() == "n" then
-			table.insert(M.command_history, {
-				command = vim.fn.keytrans(key),
-				timestamp = os.time(),
-				mode = "n",
-			})
+	-- Only record actual commands, not every keypress
+	local pending_keys = {}
+	local last_update = 0
 
-			-- Trim history if it gets too large
-			if #M.command_history > M.config.max_history_size then
-				table.remove(M.command_history, 1)
+	vim.on_key(function(key)
+		if not M.config.enable_monitoring then
+			return
+		end
+
+		local now = vim.loop.now()
+		if vim.fn.mode() == "n" then
+			-- Debounce to avoid excessive processing
+			if now - last_update < 50 then -- 50ms debounce
+				return
 			end
+
+			local translated = vim.fn.keytrans(key)
+			-- Only record meaningful keys (ignore cursor movements, etc)
+			if translated:match("^[^<]") or translated:match("^<C%-") or translated:match("^<CR>") then
+				table.insert(pending_keys, translated)
+
+				-- Batch process keys after a short delay
+				vim.defer_fn(function()
+					if #pending_keys > 0 then
+						local command = table.concat(pending_keys)
+						table.insert(M.command_history, command)
+						pending_keys = {}
+
+						-- Trim history if it gets too large
+						if #M.command_history > M.config.max_history_size then
+							table.remove(M.command_history, 1)
+						end
+					end
+				end, 100)
+			end
+
+			last_update = now
 		end
 	end)
 end
@@ -59,7 +133,11 @@ local function make_anthropic_request(prompt)
 		return
 	end
 
-	local curl = require("plenary.curl")
+	local ok, curl = pcall(require, "plenary.curl")
+	if not ok then
+		vim.notify("Backseat: plenary.nvim is required for API requests", vim.log.levels.ERROR)
+		return
+	end
 
 	local headers = {
 		["x-api-key"] = M.config.api_key,
@@ -90,7 +168,7 @@ local function make_anthropic_request(prompt)
 		callback = function(response)
 			if response.status == 200 then
 				local data = vim.json.decode(response.body)
-				if data and data.content and data.content[1] then
+				if data and data.content and data.content[1] and data.content[1] ~= "No feedback." then
 					vim.schedule(function()
 						vim.notify("Backseat Analysis:\n" .. data.content[1].text, vim.log.levels.INFO)
 					end)
@@ -113,14 +191,12 @@ local function analyze_command_history()
 	local command_list = {}
 	for _, cmd in ipairs(recent_commands) do
 		-- Filter out non-printable characters and ensure valid UTF-8
-		local clean_command = cmd.command:gsub("[%c%z]", ""):gsub("[\194-\244][\128-\191]*", "")
+		-- local clean_command = cmd:gsub("[%c%z]", ""):gsub("[\194-\244][\128-\191]*", "")
+		-- local clean_command = fixUTF8(cmd)
 		if clean_command ~= "" then
+			-- print(clean_command)
 			table.insert(command_list, clean_command)
 		end
-	end
-
-	for _, command in ipairs(command_list) do
-		print(command)
 	end
 
 	local prompt = string.format(
@@ -131,7 +207,14 @@ local function analyze_command_history()
 Here are the recent commands:
 %s
 
-Provide a brief analysis of inefficiencies or suggestions for improvement based on the patterns you see.]],
+Provide a brief analysis of inefficiencies or suggestions for improvement based on the patterns you see.
+
+Be incredibly terse.
+
+If the user provided instructions, then only make recommendations based on their instructions.
+
+If you do not have any feedback, then respond with only the words "No feedback".
+]],
 		M.instructions,
 		table.concat(command_list, "\n")
 	)
@@ -237,8 +320,8 @@ function M.setup(opts)
 	create_command_monitor()
 
 	vim.api.nvim_create_user_command("ShowCommandHistory", function()
-		for i, entry in ipairs(M.get_recent_commands(10)) do
-			print(string.format("%d: [%s] %s", i, entry.mode, entry.command))
+		for i, cmd in ipairs(M.get_recent_commands(10)) do
+			print(string.format("%d: %s", i, cmd))
 		end
 	end, {})
 
@@ -270,10 +353,6 @@ function M.get_recent_commands(limit)
 		table.insert(recent, M.command_history[i])
 	end
 	return recent
-end
-
-function M.get_instructions()
-	return M.instructions
 end
 
 return M
