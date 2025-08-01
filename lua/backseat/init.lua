@@ -17,54 +17,6 @@ local data_dir = vim.fn.stdpath("data") .. "/backseat"
 local instructions_file = data_dir .. "/instructions.txt"
 local timer = vim.loop.new_timer()
 
--- Cache for UTF8 validation to avoid repeated processing
-local utf8_cache = setmetatable({}, { __mode = "k" })
-
-local function fixUTF8(s)
-	-- Check cache first
-	local cached = utf8_cache[s]
-	if cached then
-		return cached[1], cached[2]
-	end
-
-	-- For small strings, just filter out control characters
-	if #s < 50 then
-		local clean = s:gsub("[%c%z]", "")
-		utf8_cache[s] = { clean, {} }
-		return clean, {}
-	end
-
-	-- For larger strings, do full UTF8 validation
-	local p, len, invalid = 1, #s, {}
-	while p <= len do
-		if p == s:find("[%z\1-\127]", p) then
-			p = p + 1
-		elseif p == s:find("[\194-\223][\128-\191]", p) then
-			p = p + 2
-		elseif
-			p == s:find("\224[\160-\191][\128-\191]", p)
-			or p == s:find("[\225-\236][\128-\191][\128-\191]", p)
-			or p == s:find("\237[\128-\159][\128-\191]", p)
-			or p == s:find("[\238-\239][\128-\191][\128-\191]", p)
-		then
-			p = p + 3
-		elseif
-			p == s:find("\240[\144-\191][\128-\191][\128-\191]", p)
-			or p == s:find("[\241-\243][\128-\191][\128-\191][\128-\191]", p)
-			or p == s:find("\244[\128-\143][\128-\191][\128-\191]", p)
-		then
-			p = p + 4
-		else
-			s = s:sub(1, p - 1) .. s:sub(p + 1)
-			table.insert(invalid, p)
-		end
-	end
-
-	-- Cache the result
-	utf8_cache[s] = { s, invalid }
-	return s, invalid
-end
-
 -- Load saved instructions
 local function load_instructions()
 	vim.fn.mkdir(data_dir, "p") -- Create directory if it doesn't exist
