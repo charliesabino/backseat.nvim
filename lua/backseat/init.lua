@@ -192,7 +192,7 @@ local function analyze_command_history()
 	local command_list = {}
 	for _, cmd in ipairs(recent_commands) do
 		-- Filter out non-printable characters and ensure valid UTF-8
-		-- local clean_command = cmd:gsub("[%c%z]", ""):gsub("[\194-\244][\128-\191]*", "")
+		local clean_command = cmd:gsub("[%c%z]", ""):gsub("[\194-\244][\128-\191]*", "")
 		-- local clean_command = fixUTF8(cmd)
 		if clean_command ~= "" then
 			-- print(clean_command)
@@ -212,7 +212,7 @@ local function analyze_command_history()
 Analyze the commands against the instructions.
 - Provide feedback only for deviations from the instructions.
 - All feedback must be incredibly terse.
-- If there are no deviations or no feedback is necessary, respond with the exact phrase "No feedback".
+- If there are no deviations or no feedback is necessary, respond with the exact phrase "No feedback."
 ]],
 		M.instructions,
 		table.concat(command_list, "\n")
@@ -249,26 +249,34 @@ function M.setup(opts)
 		vim.api.nvim_buf_set_option(buf, "modifiable", true)
 		vim.api.nvim_buf_set_option(buf, "buftype", "acwrite")
 
-		-- Default instructions
-		local default_instructions = {
+		-- Default instructions template (not saved)
+		local default_template = {
 			"# Blindspots Instructions",
 			"",
-			"Enter your custom instructions below. These will guide the plugin's behavior.",
+			"Enter instructions below for habits you want to avoid/replace/improve in your Neovim usage.",
+			"Only the text you write below the guidelines will be sent to the AI.",
 			"",
-			"## Guidelines:",
-			"- Be specific about what you want to track or improve",
+			"## Guidelines (not included in prompt):",
+			"- List specific habits or commands you want to avoid",
+			"- Describe better alternatives you want to use instead",
 			"- Focus on vim navigation patterns and efficiency",
-			"- Consider your common workflows and pain points",
 			"",
-			"## Your Instructions:",
-			"",
-			"",
+			"## Your Instructions (write below this line):",
+			"---",
 		}
 
-		-- If we have saved instructions, show them instead
-		local content = default_instructions
+		-- Build buffer content
+		local content = {}
+		for _, line in ipairs(default_template) do
+			table.insert(content, line)
+		end
+
+		-- If we have saved instructions, append them
 		if M.instructions ~= "" then
-			content = vim.split(M.instructions, "\n")
+			local instruction_lines = vim.split(M.instructions, "\n")
+			for _, line in ipairs(instruction_lines) do
+				table.insert(content, line)
+			end
 		end
 		-- Set the content
 		vim.api.nvim_buf_set_lines(buf, 0, -1, false, content)
@@ -289,16 +297,32 @@ function M.setup(opts)
 		vim.api.nvim_set_option_value("filetype", "markdown", {})
 
 		-- Move cursor to the instructions area
-		if M.instructions == "" then
-			vim.api.nvim_win_set_cursor(win, { #default_instructions, 0 })
-		end
+		local offset = M.instructions ~= "" and 1 or 0
+		vim.api.nvim_win_set_cursor(win, { #default_template + offset, 0 })
 
 		-- Set up autocmd to save instructions when leaving buffer
 		vim.api.nvim_create_autocmd({ "BufWinLeave", "BufUnload" }, {
 			buffer = buf,
 			callback = function()
 				local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-				M.instructions = table.concat(lines, "\n")
+				-- Find the separator line and only save content after it
+				local start_idx = 0
+				for i, line in ipairs(lines) do
+					if line == "---" then
+						start_idx = i + 1
+						break
+					end
+				end
+
+				-- Extract only user instructions
+				local user_instructions = {}
+				for i = start_idx, #lines do
+					if lines[i] then
+						table.insert(user_instructions, lines[i])
+					end
+				end
+
+				M.instructions = table.concat(user_instructions, "\n")
 				save_instructions() -- Save to file when leaving buffer
 			end,
 		})
@@ -308,7 +332,24 @@ function M.setup(opts)
 			buffer = buf,
 			callback = function()
 				local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-				M.instructions = table.concat(lines, "\n")
+				-- Find the separator line and only save content after it
+				local start_idx = 0
+				for i, line in ipairs(lines) do
+					if line == "---" then
+						start_idx = i + 1
+						break
+					end
+				end
+
+				-- Extract only user instructions
+				local user_instructions = {}
+				for i = start_idx, #lines do
+					if lines[i] then
+						table.insert(user_instructions, lines[i])
+					end
+				end
+
+				M.instructions = table.concat(user_instructions, "\n")
 				save_instructions() -- Save to file when writing
 				vim.api.nvim_set_option_value("modified", false, {})
 				print("Blindspots instructions saved!")
