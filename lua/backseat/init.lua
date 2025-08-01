@@ -245,7 +245,7 @@ function M.setup(opts)
 	-- Load saved instructions on setup
 	load_instructions()
 
-	vim.api.nvim_create_user_command("Blindspots", function()
+	vim.api.nvim_create_user_command("BackseatInstructions", function()
 		-- Create a new buffer
 		local buf = vim.api.nvim_create_buf(false, true)
 
@@ -256,7 +256,7 @@ function M.setup(opts)
 
 		-- Default instructions template (not saved)
 		local default_template = {
-			"# Blindspots Instructions",
+			"# Backseat Instructions",
 			"",
 			"Enter instructions below for habits you want to avoid/replace/improve in your Neovim usage.",
 			"Only the text you write below the guidelines will be sent to the AI.",
@@ -295,7 +295,7 @@ function M.setup(opts)
 		vim.api.nvim_win_set_height(win, 15)
 
 		-- Name the buffer
-		vim.api.nvim_buf_set_name(buf, "Blindspots Instructions")
+		vim.api.nvim_buf_set_name(buf, "Backseat Instructions")
 
 		-- Set filetype for syntax highlighting
 		-- vim.api.nvim_buf_set_option(buf, "filetype", "markdown")
@@ -357,7 +357,7 @@ function M.setup(opts)
 				M.instructions = table.concat(user_instructions, "\n")
 				save_instructions() -- Save to file when writing
 				vim.api.nvim_set_option_value("modified", false, {})
-				print("Blindspots instructions saved!")
+				print("Backseat instructions saved!")
 			end,
 		})
 	end, {})
