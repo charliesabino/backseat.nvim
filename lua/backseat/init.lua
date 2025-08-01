@@ -184,7 +184,8 @@ end
 
 local function analyze_command_history()
 	local recent_commands = M.get_recent_commands(50)
-	if #recent_commands == 0 then
+
+	if #recent_commands == 0 or M.instructions == "" then
 		return
 	end
 
