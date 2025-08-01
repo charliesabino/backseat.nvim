@@ -17,7 +17,7 @@ return {
 			-- Model to use for analysis (default: claude-3-5-haiku for efficiency)
 			model = "claude-3-5-haiku-latest",
 
-			-- Disable normal mode monitoring
+			-- Enable/Disable normal mode monitoring
 			enable_monitoring = true,
 		})
 	end,
