@@ -5,7 +5,7 @@ return {
 			-- Your Anthropic API key
 			api_key = vim.env.ANTHROPIC_API_KEY or "your-api-key-here",
 
-			-- Analysis interval in seconds (default: 300 = 5 minutes)
+			-- Analysis interval in seconds (default: 15)
 			analysis_interval = 15,
 
 			-- Maximum command history size to prevent memory issues
@@ -14,8 +14,11 @@ return {
 			-- Anthropic API endpoint (usually doesn't need changing)
 			endpoint = "https://api.anthropic.com/v1/messages",
 
-			-- Model to use for analysis (default: claude-3-haiku for efficiency)
+			-- Model to use for analysis (default: claude-3-5-haiku for efficiency)
 			model = "claude-3-5-haiku-latest",
+
+			-- Disable normal mode monitoring
+			enable_monitoring = true,
 		})
 	end,
 }

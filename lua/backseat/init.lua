@@ -5,7 +5,7 @@ M.instructions = "" -- Store user instructions
 
 M.config = {
 	api_key = nil,
-	analysis_interval = 10,
+	analysis_interval = 15,
 	max_history_size = 50,
 	endpoint = "https://api.anthropic.com/v1/messages",
 	model = "claude-3-5-haiku-latest",
