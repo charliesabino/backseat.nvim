@@ -6,7 +6,7 @@ M.instructions = "" -- Store user instructions
 M.config = {
 	api_key = nil,
 	analysis_interval = 10,
-	max_history_size = 100,
+	max_history_size = 10,
 	endpoint = "https://api.anthropic.com/v1/messages",
 	model = "claude-3-5-haiku-latest",
 	enable_monitoring = true,
@@ -177,6 +177,8 @@ local function make_anthropic_request(prompt)
 					vim.schedule(function()
 						vim.notify("Backseat Analysis:\n" .. data.content[1].text, vim.log.levels.INFO)
 					end)
+					-- Clear command history after analysis
+					M.command_history = {}
 				end
 			else
 				vim.schedule(function()
@@ -188,7 +190,7 @@ local function make_anthropic_request(prompt)
 end
 
 local function analyze_command_history()
-	local recent_commands = M.get_recent_commands(50)
+	local recent_commands = M.get_recent_commands(#M.command_history)
 
 	if #recent_commands == 0 or M.instructions == "" then
 		return
