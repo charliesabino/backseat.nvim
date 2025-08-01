@@ -2,6 +2,22 @@
 
 An AI-powered Neovim plugin that monitors your Vim habits and provides real-time feedback to help improve your workflow efficiency.
 
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [API Key](#api-key)
+  - [Options](#options)
+- [Usage](#usage)
+  - [Setting Instructions](#setting-instructions)
+  - [Commands](#commands)
+- [How It Works](#how-it-works)
+- [Example Instructions](#example-instructions)
+- [Privacy](#privacy)
+- [License](#license)
+
 ## Features
 
 - **Real-time command monitoring**: Tracks your normal mode commands and patterns
