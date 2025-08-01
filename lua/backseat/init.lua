@@ -5,11 +5,11 @@ M.instructions = "" -- Store user instructions
 
 M.config = {
 	api_key = nil,
-	analysis_interval = 300, -- 5 minutes in seconds
-	max_history_size = 10000,
+	analysis_interval = 10,
+	max_history_size = 100,
 	endpoint = "https://api.anthropic.com/v1/messages",
 	model = "claude-3-5-haiku-latest",
-	enable_monitoring = true, -- Allow disabling key monitoring for performance
+	enable_monitoring = true,
 }
 
 -- Get the data directory for persisting instructions
@@ -20,7 +20,7 @@ local timer = vim.loop.new_timer()
 -- Cache for UTF8 validation to avoid repeated processing
 local utf8_cache = setmetatable({}, { __mode = "k" })
 
-function fixUTF8(s)
+local function fixUTF8(s)
 	-- Check cache first
 	local cached = utf8_cache[s]
 	if cached then
@@ -147,7 +147,7 @@ local function make_anthropic_request(prompt)
 
 	local body = vim.json.encode({
 		model = M.config.model,
-		max_tokens = 1024,
+		max_tokens = 128,
 		messages = {
 			{
 				role = "user",
@@ -168,7 +168,12 @@ local function make_anthropic_request(prompt)
 		callback = function(response)
 			if response.status == 200 then
 				local data = vim.json.decode(response.body)
-				if data and data.content and data.content[1] and data.content[1] ~= "No feedback." then
+				if
+					data
+					and data.content
+					and data.content[1]
+					and not string.find(data.content[1].text or "", "No feedback")
+				then
 					vim.schedule(function()
 						vim.notify("Backseat Analysis:\n" .. data.content[1].text, vim.log.levels.INFO)
 					end)
@@ -211,8 +216,8 @@ local function analyze_command_history()
 
 Analyze the commands against the instructions.
 - Provide feedback only for deviations from the instructions.
-- All feedback must be incredibly terse.
-- If there are no deviations or no feedback is necessary, respond with the exact phrase "No feedback."
+- All feedback must be incredibly terse. As much as possible, respond along the lines of "Use X instead of Y."
+- If there are no deviations or no feedback is necessary, respond with the exact phrase "No feedback" and nothing else.
 ]],
 		M.instructions,
 		table.concat(command_list, "\n")
