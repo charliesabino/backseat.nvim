@@ -218,7 +218,7 @@ local function analyze_command_history()
 
 Analyze the commands against the instructions.
 - Provide feedback only for deviations from the instructions.
-- All feedback must be incredibly terse. As much as possible, respond along the lines of "Use X instead of Y."
+- All feedback must be incredibly terse. As much as possible, respond along the lines of "Use X instead of Y." with nothing else appended. Your response should fit in a small text box if possible.
 - If there are no deviations or no feedback is necessary, respond with the exact phrase "No feedback" and nothing else.
 ]],
 		M.instructions,
