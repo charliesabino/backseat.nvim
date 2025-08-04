@@ -85,6 +85,10 @@ local function create_command_monitor()
 		if translated:match("^<[^>]+>$") or translated:match("^[^<]$") then
 			table.insert(M.command_history, translated)
 		end
+
+		if #M.command_history > M.config.max_history_size then
+			table.remove(M.command_history, 1)
+		end
 	end)
 end
 
@@ -118,10 +122,10 @@ local function make_google_request(prompt)
 				},
 			},
 		},
-		-- generationConfig = {
-		-- 	maxOutputTokens = M.config.max_tokens,
-		-- 	temperature = 0.1,
-		-- },
+		generationConfig = {
+			maxOutputTokens = M.config.max_tokens,
+			temperature = 0.1,
+		},
 	})
 
 	curl.post(url, {
