@@ -7,11 +7,12 @@ local MODELS = {
 	"claude-3-5-haiku-latest",
 	"gemini-2.5-flash",
 	"gemini-2.5-flash-lite",
+	"gemini-2.0-flash",
 }
 
 M.config = {
-	anthropic_api_key = nil,
-	gemini_api_key = nil,
+	anthropic_api_key = vim.env.ANTHROPIC_API_KEY,
+	gemini_api_key = vim.env.GEMINI_API_KEY,
 	analysis_interval = 15,
 	max_history_size = 50,
 	max_tokens = 128,
@@ -74,7 +75,7 @@ local function make_google_request(prompt)
 	end
 
 	local url =
-		string.format("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent", M.config.model_name)
+		string.format("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent", M.config.model)
 
 	local headers = {
 		["content-type"] = "application/json",
@@ -91,10 +92,10 @@ local function make_google_request(prompt)
 				},
 			},
 		},
-		generationConfig = {
-			maxOutputTokens = M.config.max_tokens,
-			temperature = 0.1,
-		},
+		-- generationConfig = {
+		-- 	maxOutputTokens = M.config.max_tokens,
+		-- 	temperature = 0.1,
+		-- },
 	})
 
 	curl.post(url, {
@@ -151,7 +152,6 @@ local function make_anthropic_request(prompt)
 		messages = {
 			{
 				role = "user",
-				-- content must be an array of blocks
 				content = {
 					{
 						type = "text",
