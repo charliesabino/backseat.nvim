@@ -47,7 +47,6 @@ local function create_command_monitor()
 			local translated = vim.fn.keytrans(key)
 
 			if translated:match("^[^<]") or translated:match("^<C%-") or translated:match("^<CR>") then
-				print("translated: ", translated)
 				table.insert(M.command_history, translated)
 			end
 		end
@@ -104,7 +103,6 @@ local function make_anthropic_request(prompt)
 					vim.schedule(function()
 						vim.notify("Backseat Analysis:\n" .. data.content[1].text, vim.log.levels.INFO)
 					end)
-					-- Clear command history after analysis
 				end
 			else
 				vim.schedule(function()
@@ -124,11 +122,8 @@ local function analyze_command_history()
 
 	local command_list = {}
 	for _, cmd in ipairs(recent_commands) do
-		-- Filter out non-printable characters and ensure valid UTF-8
 		local clean_command = cmd:gsub("[%c%z]", ""):gsub("[\194-\244][\128-\191]*", "")
-		-- local clean_command = fixUTF8(cmd)
 		if clean_command ~= "" then
-			-- print(clean_command)
 			table.insert(command_list, clean_command)
 		end
 	end
