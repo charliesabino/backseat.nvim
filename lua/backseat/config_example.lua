@@ -17,8 +17,8 @@ return {
 			-- Anthropic API endpoint (usually doesn't need changing)
 			endpoint = "https://api.anthropic.com/v1/messages",
 
-			-- Model to use for analysis (default: claude-3-5-haiku for efficiency)
-			model = "claude-3-5-haiku-latest",
+			-- Model to use for analysis (default: gemini-2.0-flash, see https://sanand0.github.io/llmpricing/)
+			model = "gemini-2.0-flash",
 
 			-- Enable/Disable normal mode monitoring
 			enable_monitoring = true,
