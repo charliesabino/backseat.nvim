@@ -46,18 +46,44 @@ local function save_instructions()
 	end
 end
 
+local function normalize_key(raw)
+	-- Normalize to termcodes and human-readable
+	local rt = vim.api.nvim_replace_termcodes(raw, true, true, true)
+	local tok = vim.fn.keytrans(rt)
+
+	-- Map actual leader chars to <Leader>/<LocalLeader>
+	local leader = vim.g.mapleader or "\\"
+	local localleader = vim.g.maplocalleader or "\\"
+	if tok == leader then
+		tok = "<Leader>"
+	end
+	if tok == localleader then
+		tok = "<LocalLeader>"
+	end
+
+	-- If the token itself is <...>, escape any *inner* '<' to <lt>
+	-- e.g. "<t_<fd>g>" -> "<t_<lt>fd>g>"
+	tok = tok:gsub("^<([^>]+)>$", function(inner)
+		inner = inner:gsub("<", "<lt>")
+		return "<" .. inner .. ">"
+	end)
+
+	-- Drop NUL/C0 controls (Anthropic rejects null bytes)
+	tok = tok:gsub("[%z\1-\31]", "")
+
+	return tok
+end
+
 local function create_command_monitor()
 	vim.on_key(function(key)
-		if not M.config.enable_monitoring then
+		if not M.config.enable_monitoring or vim.fn.mode() ~= "n" then
 			return
 		end
 
-		if vim.fn.mode() == "n" then
-			local translated = vim.fn.keytrans(key)
+		local translated = normalize_key(key)
 
-			if translated:match("^[^<]") or translated:match("^<C%-") or translated:match("^<CR>") then
-				table.insert(M.command_history, translated)
-			end
+		if translated:match("^<[^>]+>$") or translated:match("^[^<]$") then
+			table.insert(M.command_history, translated)
 		end
 	end)
 end
