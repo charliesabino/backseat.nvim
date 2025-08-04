@@ -38,39 +38,17 @@ local function save_instructions()
 end
 
 local function create_command_monitor()
-	-- Only record actual commands, not every keypress
-	local pending_keys = {}
-	local last_update = 0
-
 	vim.on_key(function(key)
 		if not M.config.enable_monitoring then
 			return
 		end
 
-		local now = vim.loop.now()
 		if vim.fn.mode() == "n" then
-			-- print("inside: ", key)
-
 			local translated = vim.fn.keytrans(key)
 
 			if translated:match("^[^<]") or translated:match("^<C%-") or translated:match("^<CR>") then
-				-- print("translated: ", translated)
+				print("translated: ", translated)
 				table.insert(M.command_history, translated)
-				table.insert(pending_keys, translated)
-
-				-- Batch process keys after a short delay
-				vim.defer_fn(function()
-					if #pending_keys > 0 then
-						local command = table.concat(pending_keys)
-						-- table.insert(M.command_history, command)
-						pending_keys = {}
-
-						-- Trim history if it gets too large
-						if #M.command_history > M.config.max_history_size then
-							table.remove(M.command_history, 1)
-						end
-					end
-				end, 100)
 			end
 		end
 	end)
@@ -139,7 +117,6 @@ local function make_anthropic_request(prompt)
 						vim.notify("Backseat Analysis:\n" .. data.content[1].text, vim.log.levels.INFO)
 					end)
 					-- Clear command history after analysis
-					M.command_history = {}
 				end
 			else
 				vim.schedule(function()
@@ -168,8 +145,6 @@ local function analyze_command_history()
 		end
 	end
 
-	print("analyzing", table.concat(command_list, ""))
-
 	local prompt = string.format(
 		[[You are a Neovim expert. Your task is to analyze a list of recent commands and provide feedback based *only* on the user's instructions.
 
@@ -192,6 +167,8 @@ Analyze the commands against the instructions.
 	)
 
 	make_anthropic_request(prompt)
+
+	M.command_history = {}
 end
 
 local function start_periodic_analysis()
