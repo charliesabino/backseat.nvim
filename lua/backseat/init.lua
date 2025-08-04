@@ -6,7 +6,7 @@ M.instructions = "" -- Store user instructions
 local MODELS = {
 	"claude-3-5-haiku-latest",
 	"gemini-2.5-flash",
-	"gemini-2.0-flash-001",
+	"gemini-2.5-flash-lite",
 }
 
 M.config = {
@@ -14,6 +14,7 @@ M.config = {
 	gemini_api_key = nil,
 	analysis_interval = 15,
 	max_history_size = 50,
+	max_tokens = 128,
 	endpoint = "https://api.anthropic.com/v1/messages",
 	model = "claude-3-5-haiku-latest",
 	enable_monitoring = true,
@@ -60,6 +61,72 @@ local function create_command_monitor()
 	end)
 end
 
+local function make_google_request(prompt)
+	if not M.config.gemini_api_key then
+		vim.notify("Backseat: Gemini API key not configured", vim.log.levels.ERROR)
+		return
+	end
+
+	local ok, curl = pcall(require, "plenary.curl")
+	if not ok then
+		vim.notify("Backseat: plenary.nvim is required for API requests", vim.log.levels.ERROR)
+		return
+	end
+
+	local url =
+		string.format("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent", M.config.model_name)
+
+	local headers = {
+		["content-type"] = "application/json",
+		["x-goog-api-key"] = M.config.gemini_api_key,
+	}
+
+	local body = vim.json.encode({
+		contents = {
+			{
+				parts = {
+					{
+						text = prompt,
+					},
+				},
+			},
+		},
+		generationConfig = {
+			maxOutputTokens = M.config.max_tokens,
+			temperature = 0.1,
+		},
+	})
+
+	curl.post(url, {
+		headers = headers,
+		body = body,
+		callback = function(response)
+			if response.status == 200 then
+				local data = vim.json.decode(response.body)
+				if
+					data
+					and data.candidates
+					and data.candidates[1]
+					and data.candidates[1].content
+					and data.candidates[1].content.parts
+					and data.candidates[1].content.parts[1]
+				then
+					local text = data.candidates[1].content.parts[1].text
+					if not string.find(text or "", "No feedback") then
+						vim.schedule(function()
+							vim.notify("Backseat Analysis:\n" .. text, vim.log.levels.INFO)
+						end)
+					end
+				end
+			else
+				vim.schedule(function()
+					vim.notify("Backseat: API request failed - " .. response.status, vim.log.levels.ERROR)
+				end)
+			end
+		end,
+	})
+end
+
 local function make_anthropic_request(prompt)
 	if not M.config.anthropic_api_key then
 		vim.notify("Backseat: API key not configured", vim.log.levels.ERROR)
@@ -80,7 +147,7 @@ local function make_anthropic_request(prompt)
 
 	local body = vim.json.encode({
 		model = M.config.model,
-		max_tokens = 128,
+		max_tokens = M.config.max_tokens,
 		messages = {
 			{
 				role = "user",
@@ -157,13 +224,17 @@ Analyze the commands against the instructions.
 		table.concat(command_list, "\n")
 	)
 
-	make_anthropic_request(prompt)
+	if M.config.model:match("^gemini") then
+		make_google_request(prompt)
+	else
+		make_anthropic_request(prompt)
+	end
 
 	M.command_history = {}
 end
 
 local function start_periodic_analysis()
-	if M.config.anthropic_api_key and M.config.analysis_interval > 0 then
+	if (M.config.anthropic_api_key or M.config.gemini_api_key) and M.config.analysis_interval > 0 then
 		timer:start(M.config.analysis_interval * 1000, M.config.analysis_interval * 1000, function()
 			vim.schedule(analyze_command_history)
 		end)
@@ -335,7 +406,7 @@ function M.setup(opts)
 	end, {})
 
 	-- Start periodic analysis if configured
-	if M.config.anthropic_api_key then
+	if M.config.anthropic_api_key or M.config.gemini_api_key then
 		start_periodic_analysis()
 	end
 end
