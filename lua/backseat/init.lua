@@ -3,8 +3,15 @@ local M = {}
 M.command_history = {}
 M.instructions = "" -- Store user instructions
 
+local MODELS = {
+	"claude-3-5-haiku-latest",
+	"gemini-2.5-flash",
+	"gemini-2.0-flash-001",
+}
+
 M.config = {
 	anthropic_api_key = nil,
+	gemini_api_key = nil,
 	analysis_interval = 15,
 	max_history_size = 50,
 	endpoint = "https://api.anthropic.com/v1/messages",
@@ -311,6 +318,20 @@ function M.setup(opts)
 	vim.api.nvim_create_user_command("BackseatStopAnalysis", function()
 		stop_periodic_analysis()
 		vim.notify("Backseat: Stopped periodic analysis", vim.log.levels.INFO)
+	end, {})
+
+	vim.api.nvim_create_user_command("BackseatSelectModel", function()
+		vim.ui.select(MODELS, {
+			prompt = "Select model:",
+			format_item = function(item)
+				return item
+			end,
+		}, function(choice)
+			if choice then
+				M.config.model = choice
+				vim.notify("Backseat: Model changed to " .. choice, vim.log.levels.INFO)
+			end
+		end)
 	end, {})
 
 	-- Start periodic analysis if configured

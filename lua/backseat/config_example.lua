@@ -5,6 +5,9 @@ return {
 			-- Your Anthropic API key
 			anthropic_api_key = vim.env.ANTHROPIC_API_KEY or "your-api-key-here",
 
+			-- Your Gemini API key
+			gemini_api_key = vim.env.GEMINI_API_KEY or "your-api-key-here",
+
 			-- Analysis interval in seconds (default: 15)
 			analysis_interval = 15,
 
