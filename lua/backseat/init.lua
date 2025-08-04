@@ -49,21 +49,20 @@ local function create_command_monitor()
 
 		local now = vim.loop.now()
 		if vim.fn.mode() == "n" then
-			-- Debounce to avoid excessive processing
-			if now - last_update < 50 then -- 50ms debounce
-				return
-			end
+			-- print("inside: ", key)
 
 			local translated = vim.fn.keytrans(key)
-			-- Only record meaningful keys (ignore cursor movements, etc)
+
 			if translated:match("^[^<]") or translated:match("^<C%-") or translated:match("^<CR>") then
+				-- print("translated: ", translated)
+				table.insert(M.command_history, translated)
 				table.insert(pending_keys, translated)
 
 				-- Batch process keys after a short delay
 				vim.defer_fn(function()
 					if #pending_keys > 0 then
 						local command = table.concat(pending_keys)
-						table.insert(M.command_history, command)
+						-- table.insert(M.command_history, command)
 						pending_keys = {}
 
 						-- Trim history if it gets too large
@@ -73,11 +72,21 @@ local function create_command_monitor()
 					end
 				end, 100)
 			end
-
-			last_update = now
 		end
 	end)
 end
+
+-- local function create_command_monitor()
+-- 	vim.on_key(function(key)
+-- 		if vim.fn.mode() == "n" then
+-- 			table.insert(M.command_history, {
+-- 				command = vim.fn.keytrans(key),
+-- 				timestamp = os.time(),
+-- 				mode = "n",
+-- 			})
+-- 		end
+-- 	end)
+-- end
 
 local function make_anthropic_request(prompt)
 	if not M.config.api_key then
@@ -159,8 +168,10 @@ local function analyze_command_history()
 		end
 	end
 
+	print("analyzing", table.concat(command_list, ""))
+
 	local prompt = string.format(
-[[You are a Neovim expert. Your task is to analyze a list of recent commands and provide feedback based *only* on the user's instructions.
+		[[You are a Neovim expert. Your task is to analyze a list of recent commands and provide feedback based *only* on the user's instructions.
 
 <instructions>
 %s
