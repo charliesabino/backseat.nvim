@@ -17,7 +17,7 @@ M.config = {
 	max_history_size = 50,
 	max_tokens = 128,
 	endpoint = "https://api.anthropic.com/v1/messages",
-	model = "claude-3-5-haiku-latest",
+	model = "gemini-2.0-flash",
 	enable_monitoring = true,
 }
 
