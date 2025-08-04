@@ -4,7 +4,7 @@ M.command_history = {}
 M.instructions = "" -- Store user instructions
 
 M.config = {
-	api_key = nil,
+	anthropic_api_key = nil,
 	analysis_interval = 15,
 	max_history_size = 50,
 	endpoint = "https://api.anthropic.com/v1/messages",
@@ -54,7 +54,7 @@ local function create_command_monitor()
 end
 
 local function make_anthropic_request(prompt)
-	if not M.config.api_key then
+	if not M.config.anthropic_api_key then
 		vim.notify("Backseat: API key not configured", vim.log.levels.ERROR)
 		return
 	end
@@ -66,7 +66,7 @@ local function make_anthropic_request(prompt)
 	end
 
 	local headers = {
-		["x-api-key"] = M.config.api_key,
+		["x-api-key"] = M.config.anthropic_api_key,
 		["anthropic-version"] = "2023-06-01",
 		["content-type"] = "application/json",
 	}
@@ -156,7 +156,7 @@ Analyze the commands against the instructions.
 end
 
 local function start_periodic_analysis()
-	if M.config.api_key and M.config.analysis_interval > 0 then
+	if M.config.anthropic_api_key and M.config.analysis_interval > 0 then
 		timer:start(M.config.analysis_interval * 1000, M.config.analysis_interval * 1000, function()
 			vim.schedule(analyze_command_history)
 		end)
@@ -314,7 +314,7 @@ function M.setup(opts)
 	end, {})
 
 	-- Start periodic analysis if configured
-	if M.config.api_key then
+	if M.config.anthropic_api_key then
 		start_periodic_analysis()
 	end
 end

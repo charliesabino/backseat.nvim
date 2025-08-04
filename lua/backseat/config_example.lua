@@ -3,7 +3,7 @@ return {
 	config = function()
 		require("backseat").setup({
 			-- Your Anthropic API key
-			api_key = vim.env.ANTHROPIC_API_KEY or "your-api-key-here",
+			anthropic_api_key = vim.env.ANTHROPIC_API_KEY or "your-api-key-here",
 
 			-- Analysis interval in seconds (default: 15)
 			analysis_interval = 15,
@@ -22,4 +22,3 @@ return {
 		})
 	end,
 }
-
