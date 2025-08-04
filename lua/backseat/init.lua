@@ -54,18 +54,6 @@ local function create_command_monitor()
 	end)
 end
 
--- local function create_command_monitor()
--- 	vim.on_key(function(key)
--- 		if vim.fn.mode() == "n" then
--- 			table.insert(M.command_history, {
--- 				command = vim.fn.keytrans(key),
--- 				timestamp = os.time(),
--- 				mode = "n",
--- 			})
--- 		end
--- 	end)
--- end
-
 local function make_anthropic_request(prompt)
 	if not M.config.api_key then
 		vim.notify("Backseat: API key not configured", vim.log.levels.ERROR)
