@@ -148,11 +148,11 @@ local function make_google_request(prompt)
 							vim.notify("Gemini Analysis:\n" .. text, vim.log.levels.INFO)
 						end)
 					end
+				else
+					vim.schedule(function()
+						vim.notify("Backseat: API request failed - " .. response.status, vim.log.levels.ERROR)
+					end)
 				end
-			else
-				vim.schedule(function()
-					vim.notify("Backseat: API request failed - " .. response.status, vim.log.levels.ERROR)
-				end)
 			end
 		end,
 	})
