@@ -128,7 +128,7 @@ local function make_google_request(prompt)
 		},
 	})
 
-	curl.post(url, {
+	url = curl.post(url, {
 		headers = headers,
 		body = body,
 		callback = function(response)
@@ -145,7 +145,7 @@ local function make_google_request(prompt)
 					local text = data.candidates[1].content.parts[1].text
 					if not string.find(text or "", "No feedback") then
 						vim.schedule(function()
-							vim.notify("Gemini Analysis:\n" .. text, vim.log.levels.INFO)
+							vim.notify(M.config.model .. " Analysis:\n" .. text, vim.log.levels.INFO)
 						end)
 					end
 				else
@@ -192,7 +192,9 @@ local function make_anthropic_request(prompt)
 		},
 	})
 
-	curl.post(M.config.endpoint, {
+	local url = "https://api.anthropic.com/v1/messages"
+
+	curl.post(url, {
 		headers = headers,
 		body = body,
 		callback = function(response)
@@ -205,7 +207,7 @@ local function make_anthropic_request(prompt)
 					and not string.find(data.content[1].text or "", "No feedback")
 				then
 					vim.schedule(function()
-						vim.notify("Claude Analysis:\n" .. data.content[1].text, vim.log.levels.INFO)
+						vim.notify(M.config.model .. " Analysis:\n" .. data.content[1].text, vim.log.levels.INFO)
 					end)
 				end
 			else

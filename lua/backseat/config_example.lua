@@ -14,9 +14,6 @@ return {
 			-- Maximum command history size to prevent memory issues
 			max_history_size = 50,
 
-			-- Anthropic API endpoint (usually doesn't need changing)
-			endpoint = "https://api.anthropic.com/v1/messages",
-
 			-- Model to use for analysis (default: gemini-2.0-flash, see https://sanand0.github.io/llmpricing/)
 			model = "gemini-2.0-flash",
 
