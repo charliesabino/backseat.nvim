@@ -2,9 +2,7 @@
 
 An AI-powered Neovim plugin that monitors your Vim habits and provides real-time feedback to help improve your workflow efficiency.
 
-
-https://github.com/user-attachments/assets/ec19bc33-ade4-4500-be2c-a83851d7c72d
-
+<https://github.com/user-attachments/assets/ec19bc33-ade4-4500-be2c-a83851d7c72d>
 
 ## Table of Contents
 
@@ -19,6 +17,7 @@ https://github.com/user-attachments/assets/ec19bc33-ade4-4500-be2c-a83851d7c72d
   - [Commands](#commands)
 - [How It Works](#how-it-works)
 - [Example Instructions](#example-instructions)
+- [Cost](#cost)
 - [Privacy](#privacy)
 - [License](#license)
 
@@ -100,6 +99,7 @@ Define what habits you want to improve:
 ```
 
 This opens a buffer where you can write instructions like:
+
 - "Use `w` and `b` instead of holding `h` and `l`"
 - "Prefer `f` and `t` motions over repeated `w`"
 - "Use `ci{` instead of `di{i`"
@@ -133,6 +133,10 @@ Prefer % for matching brackets over manual navigation
 Use . to repeat commands instead of retyping
 Avoid excessive use of x for deletion, use d with motions
 ```
+
+## Cost
+
+backseat.nvim is designed to be extremely cost-effective. It uses Gemini 2.0 Flash by default, which is one of the most affordable AI models available. Even with the generous assumption that one is in Neovim normal mode 6 hours a day, backseat.nvim will cost only ~$0.01 per day.
 
 ## Privacy
 
