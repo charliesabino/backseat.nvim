@@ -145,7 +145,7 @@ local function make_google_request(prompt)
 					local text = data.candidates[1].content.parts[1].text
 					if not string.find(text or "", "No feedback") then
 						vim.schedule(function()
-							vim.notify("Backseat Analysis:\n" .. text, vim.log.levels.INFO)
+							vim.notify("Gemini Analysis:\n" .. text, vim.log.levels.INFO)
 						end)
 					end
 				end
@@ -205,7 +205,7 @@ local function make_anthropic_request(prompt)
 					and not string.find(data.content[1].text or "", "No feedback")
 				then
 					vim.schedule(function()
-						vim.notify("Backseat Analysis:\n" .. data.content[1].text, vim.log.levels.INFO)
+						vim.notify("Claude Analysis:\n" .. data.content[1].text, vim.log.levels.INFO)
 					end)
 				end
 			else
