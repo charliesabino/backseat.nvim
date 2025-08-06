@@ -35,8 +35,8 @@ function M.load_replacement_rules()
 		f:close()
 		M.replacement_rules = {}
 		for line in content:gmatch("[^\r\n]+") do
-			local replacement, original = line:match("^([^,]+),(.+)$")
-			if replacement and original then
+			local original, replacement = line:match("^([^,]+),(.+)$")
+			if original and replacement then
 				M.replacement_rules[original] = replacement
 			end
 		end
@@ -49,7 +49,7 @@ function M.save_replacement_rules(rules)
 	local f = io.open(replacement_rules_file, "w")
 	if f then
 		for original, replacement in pairs(rules) do
-			f:write(replacement .. "," .. original .. "\n")
+			f:write(original .. "," .. replacement .. "\n")
 		end
 		f:close()
 	end

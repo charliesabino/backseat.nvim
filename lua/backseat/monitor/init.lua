@@ -52,6 +52,7 @@ function M.create_command_monitor(config)
 		end
 
 		local current_command = table.concat(M.command_history, "")
+
 		local should_replace, replacement, original = check_command_against_rules(current_command)
 		if should_replace then
 			vim.schedule(function()
@@ -87,3 +88,4 @@ function M.set_replacement_rules(rules)
 end
 
 return M
+

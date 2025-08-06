@@ -76,14 +76,14 @@ function M.setup_commands()
 		local default_template = {
 			"# Backseat Replacement Rules",
 			"",
-			"Enter replacement rules below in the format: replacement,original",
-			"For example: 'go,gg' means suggest 'go' when user types 'gg'",
+			"Enter replacement rules below in the format: original,replacement",
+			"For example: 'gg,go' means suggest 'go' when user types 'gg'",
 			"",
 			"## Guidelines (not included in rules):",
 			"- One rule per line",
-			"- Format: replacement,original",
+			"- Format: original,replacement",
 			"- The original pattern is matched at the end of commands",
-			"- Example: 'w,<Right>' suggests 'w' instead of arrow keys",
+			"- Example: '<Right>,w' suggests 'w' instead of arrow keys",
 			"",
 			"## Your Rules (write below this line):",
 			"---",
@@ -96,7 +96,7 @@ function M.setup_commands()
 
 		local rules = persistence.get_replacement_rules()
 		for original, replacement in pairs(rules) do
-			table.insert(content, replacement .. "," .. original)
+			table.insert(content, original .. "," .. replacement)
 		end
 
 		vim.api.nvim_buf_set_lines(buf, 0, -1, false, content)
@@ -122,8 +122,8 @@ function M.setup_commands()
 			local new_rules = {}
 			for i = start_idx, #lines do
 				if lines[i] and lines[i] ~= "" then
-					local replacement, original = lines[i]:match("^([^,]+),(.+)$")
-					if replacement and original then
+					local original, replacement = lines[i]:match("^([^,]+),(.+)$")
+					if original and replacement then
 						new_rules[original] = replacement
 					end
 				end
