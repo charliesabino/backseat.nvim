@@ -201,6 +201,7 @@ For optional AI analysis: backseat.nvim is designed to be extremely cost-effecti
   - Only command keystrokes and custom instructions are sent to the API
   - No file contents or sensitive data are transmitted
   - Commands are processed in batches and cleared after analysis
+  - Option to use local models served via ollama
 
 ## License
 
