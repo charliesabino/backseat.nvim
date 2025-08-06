@@ -176,6 +176,11 @@ local function create_command_monitor()
 					string.format("Backseat: Use '%s' instead of '%s'", replacement, original),
 					vim.log.levels.WARN
 				)
+
+				-- remove command to avoid duplicate notifications.
+				for _ = 1, #original do
+					table.remove(M.command_history) -- removes last element
+				end
 			end)
 		end
 	end)
