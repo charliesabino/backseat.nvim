@@ -26,8 +26,9 @@ An AI-powered Neovim plugin that monitors your Vim habits and provides real-time
 - **Real-time command monitoring**: Tracks your normal mode commands and patterns
 - **AI-powered analysis**: Uses Claude AI to analyze your habits against your defined instructions
 - **Customizable instructions**: Define your own rules for what habits to avoid or improve
+- **Instant replacement rules**: Get immediate feedback for simple command substitutions
 - **Periodic feedback**: Automatically analyzes your command history at configurable intervals
-- **Persistent instructions**: Your custom instructions are saved and loaded automatically
+- **Persistent settings**: Your custom instructions and replacement rules are saved and loaded automatically
 
 ## Requirements
 
@@ -92,46 +93,83 @@ export ANTHROPIC_API_KEY="your-api-key-here"
 
 ### Setting Instructions
 
-Define what habits you want to improve:
+Backseat.nvim offers two ways to define improvement rules:
+
+#### 1. Replacement Rules (Simple Substitutions)
+
+For straightforward command substitutions, use replacement rules:
 
 ```vim
-:BackseatInstructions
+:BackseatReplacementRules
 ```
 
-This opens a buffer where you can write instructions like:
+This opens a buffer where you can define simple key-value pairs:
+- `go,gg` - suggests using `go` instead of `gg`
+- `w,<Right>` - suggests using `w` instead of arrow keys
+- `0,<Home>` - suggests using `0` instead of Home key
 
+Replacement rules provide **instant feedback** as you type, making them ideal for breaking specific bad habits.
+
+#### 2. Model Instructions (Complex Patterns)
+
+For more complex patterns and context-aware feedback, use model instructions:
+
+```vim
+:BackseatModelInstructions
+```
+
+This opens a buffer where you can write natural language instructions like:
 - "Use `w` and `b` instead of holding `h` and `l`"
 - "Prefer `f` and `t` motions over repeated `w`"
 - "Use `ci{` instead of `di{i`"
+- "Avoid excessive visual mode for simple operations"
 
-Your instructions are automatically saved and persist between sessions.
+Model instructions are analyzed periodically by AI and can understand complex patterns and context.
+
+Both settings are automatically saved and persist between sessions.
 
 ### Commands
 
 | Command | Description |
 |---------|-------------|
-| `:BackseatInstructions` | Open/edit your custom instructions |
-| `:BackseatAnalyze` | Manually trigger analysis of recent commands |
+| `:BackseatReplacementRules` | Open/edit simple replacement rules (instant feedback) |
+| `:BackseatModelInstructions` | Open/edit AI-analyzed instructions (periodic feedback) |
+| `:BackseatAnalyze` | Manually trigger AI analysis of recent commands |
 | `:BackseatStartAnalysis` | Start periodic automatic analysis |
 | `:BackseatStopAnalysis` | Stop periodic automatic analysis |
 | `:ShowCommandHistory` | Display recent command history |
+| `:BackseatSelectModel` | Select which AI model to use |
+| `:BackseatRefreshModels` | Refresh available Ollama models |
 
 ## How It Works
 
 1. The plugin monitors your normal mode keystrokes and builds a command history
-2. Every `analysis_interval` seconds, it sends your recent commands to Claude
-3. Claude analyzes the commands against your defined instructions
-4. If you're deviating from your desired habits, you get a notification with terse feedback
-5. If your commands align with your instructions, no notification is shown
+2. **Instant feedback**: Replacement rules are checked on every keystroke for immediate notifications
+3. **Periodic analysis**: Every `analysis_interval` seconds, recent commands are sent to the AI model
+4. The AI analyzes commands against your model instructions for complex pattern matching
+5. If you're deviating from your desired habits, you get a notification with terse feedback
+6. If your commands align with your instructions, no notification is shown
 
 ## Example Instructions
 
+### Replacement Rules (in :BackseatReplacementRules)
+```
+w,<Right>
+b,<Left>
+gg,<Home>
+G,<End>
+0,^
+ge,be
+```
+
+### Model Instructions (in :BackseatModelInstructions)
 ```
 Avoid using arrow keys, use hjkl instead
 Use text objects (iw, i", i{) instead of visual mode selection
 Prefer % for matching brackets over manual navigation
 Use . to repeat commands instead of retyping
 Avoid excessive use of x for deletion, use d with motions
+When navigating between words, prefer f/F/t/T over multiple w/b commands
 ```
 
 ## Cost

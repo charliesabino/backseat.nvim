@@ -2,6 +2,7 @@ local M = {}
 
 M.command_history = {}
 M.instructions = "" -- Store user instructions
+M.replacement_rules = {} -- Store replacement rules (key-value pairs)
 
 local DEFAULT_MODELS = {
 	"claude-3-5-haiku-latest",
@@ -27,6 +28,7 @@ M.config = {
 -- Get the data directory for persisting instructions
 local data_dir = vim.fn.stdpath("data") .. "/backseat"
 local instructions_file = data_dir .. "/instructions.txt"
+local replacement_rules_file = data_dir .. "/replacement_rules.txt"
 local timer = vim.loop.new_timer()
 
 -- Fetch available Ollama models
@@ -82,6 +84,35 @@ local function save_instructions()
 	end
 end
 
+-- Load replacement rules from file
+local function load_replacement_rules()
+	vim.fn.mkdir(data_dir, "p") -- Create directory if it doesn't exist
+	local f = io.open(replacement_rules_file, "r")
+	if f then
+		local content = f:read("*all")
+		f:close()
+		-- Parse the rules (format: "replacement,original" per line)
+		for line in content:gmatch("[^\r\n]+") do
+			local replacement, original = line:match("^([^,]+),(.+)$")
+			if replacement and original then
+				M.replacement_rules[original] = replacement
+			end
+		end
+	end
+end
+
+-- Save replacement rules to file
+local function save_replacement_rules()
+	vim.fn.mkdir(data_dir, "p") -- Create directory if it doesn't exist
+	local f = io.open(replacement_rules_file, "w")
+	if f then
+		for original, replacement in pairs(M.replacement_rules) do
+			f:write(replacement .. "," .. original .. "\n")
+		end
+		f:close()
+	end
+end
+
 local function normalize_key(raw)
 	-- Normalize to termcodes and human-readable
 	local rt = vim.api.nvim_replace_termcodes(raw, true, true, true)
@@ -110,6 +141,16 @@ local function normalize_key(raw)
 	return tok
 end
 
+-- Check if a command ends with any of the replacement rule keys
+local function check_command_against_rules(command_str)
+	for original, replacement in pairs(M.replacement_rules) do
+		if command_str:sub(-#original) == original then
+			return true, replacement, original
+		end
+	end
+	return false, nil, nil
+end
+
 local function create_command_monitor()
 	vim.on_key(function(key)
 		if not M.config.enable_monitoring or vim.fn.mode() ~= "n" then
@@ -124,6 +165,18 @@ local function create_command_monitor()
 
 		if #M.command_history > M.config.max_history_size then
 			table.remove(M.command_history, 1)
+		end
+
+		-- Check the current command sequence against replacement rules
+		local current_command = table.concat(M.command_history, "")
+		local should_replace, replacement, original = check_command_against_rules(current_command)
+		if should_replace then
+			vim.schedule(function()
+				vim.notify(
+					string.format("Backseat: Use '%s' instead of '%s'", replacement, original),
+					vim.log.levels.WARN
+				)
+			end)
 		end
 	end)
 end
@@ -384,11 +437,130 @@ function M.setup(opts)
 
 	-- Load saved instructions on setup
 	load_instructions()
+	-- Load saved replacement rules on setup
+	load_replacement_rules()
 
-	vim.api.nvim_create_user_command("BackseatInstructions", function()
+	vim.api.nvim_create_user_command("BackseatReplacementRules", function()
 		-- Create a new buffer
 		local buf = vim.api.nvim_create_buf(false, true)
+		-- Set buffer options
+		vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+		vim.api.nvim_buf_set_option(buf, "modifiable", true)
+		vim.api.nvim_buf_set_option(buf, "buftype", "acwrite")
 
+		-- Default template (not saved)
+		local default_template = {
+			"# Backseat Replacement Rules",
+			"",
+			"Enter replacement rules below in the format: replacement,original",
+			"For example: 'go,gg' means suggest 'go' when user types 'gg'",
+			"",
+			"## Guidelines (not included in rules):",
+			"- One rule per line",
+			"- Format: replacement,original",
+			"- The original pattern is matched at the end of commands",
+			"- Example: 'w,<Right>' suggests 'w' instead of arrow keys",
+			"",
+			"## Your Rules (write below this line):",
+			"---",
+		}
+
+		-- Build buffer content
+		local content = {}
+		for _, line in ipairs(default_template) do
+			table.insert(content, line)
+		end
+
+		-- If we have saved rules, append them
+		for original, replacement in pairs(M.replacement_rules) do
+			table.insert(content, replacement .. "," .. original)
+		end
+
+		-- Set the content
+		vim.api.nvim_buf_set_lines(buf, 0, -1, false, content)
+
+		-- Open in a new window
+		vim.cmd("split")
+		local win = vim.api.nvim_get_current_win()
+		vim.api.nvim_win_set_buf(win, buf)
+
+		-- Set window height
+		vim.api.nvim_win_set_height(win, 15)
+
+		-- Name the buffer
+		vim.api.nvim_buf_set_name(buf, "Backseat Replacement Rules")
+
+		-- Set filetype for syntax highlighting
+		vim.api.nvim_set_option_value("filetype", "markdown", {})
+
+		-- Move cursor to the rules area
+		local offset = #M.instructions
+		vim.api.nvim_win_set_cursor(win, { #default_template, 0 })
+
+		-- Set up autocmd to save rules when leaving buffer
+		vim.api.nvim_create_autocmd({ "BufWinLeave", "BufUnload" }, {
+			buffer = buf,
+			callback = function()
+				local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+				-- Find the separator line and only save content after it
+				local start_idx = 0
+				for i, line in ipairs(lines) do
+					if line == "---" then
+						start_idx = i + 1
+						break
+					end
+				end
+
+				-- Clear existing rules and parse new ones
+				M.replacement_rules = {}
+				for i = start_idx, #lines do
+					if lines[i] and lines[i] ~= "" then
+						local replacement, original = lines[i]:match("^([^,]+),(.+)$")
+						if replacement and original then
+							M.replacement_rules[original] = replacement
+						end
+					end
+				end
+
+				save_replacement_rules() -- Save to file when leaving buffer
+			end,
+		})
+
+		-- Handle write commands with BufWriteCmd since we set buftype=acwrite
+		vim.api.nvim_create_autocmd("BufWriteCmd", {
+			buffer = buf,
+			callback = function()
+				local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+				-- Find the separator line and only save content after it
+				local start_idx = 0
+				for i, line in ipairs(lines) do
+					if line == "---" then
+						start_idx = i + 1
+						break
+					end
+				end
+
+				-- Clear existing rules and parse new ones
+				M.replacement_rules = {}
+				for i = start_idx, #lines do
+					if lines[i] and lines[i] ~= "" then
+						local replacement, original = lines[i]:match("^([^,]+),(.+)$")
+						if replacement and original then
+							M.replacement_rules[original] = replacement
+						end
+					end
+				end
+
+				save_replacement_rules() -- Save to file when writing
+				vim.api.nvim_set_option_value("modified", false, {})
+				print("Backseat replacement rules saved!")
+			end,
+		})
+	end, {})
+
+	vim.api.nvim_create_user_command("BackseatModelInstructions", function()
+		-- Create a new buffer
+		local buf = vim.api.nvim_create_buf(false, true)
 		-- Set buffer options
 		vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
 		vim.api.nvim_buf_set_option(buf, "modifiable", true)
