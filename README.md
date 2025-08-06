@@ -1,6 +1,6 @@
 # backseat.nvim
 
-An AI-powered Neovim plugin that monitors your Vim habits and provides real-time feedback to help improve your workflow efficiency.
+A Neovim plugin that provides instant feedback for command improvements with customizable replacement rules and optional AI-powered habit analysis.
 
 https://github.com/user-attachments/assets/62874323-30e8-4540-82bf-5ac0c4197af0
 
@@ -23,12 +23,12 @@ https://github.com/user-attachments/assets/62874323-30e8-4540-82bf-5ac0c4197af0
 
 ## Features
 
-- **Real-time command monitoring**: Tracks your normal mode commands and patterns
-- **AI-powered analysis**: Uses Claude AI to analyze your habits against your defined instructions
-- **Customizable instructions**: Define your own rules for what habits to avoid or improve
-- **Instant replacement rules**: Get immediate feedback for simple command substitutions
-- **Periodic feedback**: Automatically analyzes your command history at configurable intervals
-- **Persistent settings**: Your custom instructions and replacement rules are saved and loaded automatically
+- **Instant replacement rules**: Define simple command substitutions that provide immediate feedback as you type
+- **Real-time command monitoring**: Tracks your normal mode commands and suggests improvements instantly
+- **Persistent settings**: Your custom replacement rules are saved and loaded automatically
+- **AI-powered analysis** *(optional)*: Use AI models to analyze complex patterns and provide deeper insights
+- **Customizable instructions** *(optional)*: Define natural language rules for AI-based habit analysis
+- **Periodic feedback** *(optional)*: Automatically analyze command history at configurable intervals
 
 ## Requirements
 
@@ -91,64 +91,71 @@ export ANTHROPIC_API_KEY="your-api-key-here"
 
 ## Usage
 
-### Setting Instructions
+### Quick Start: Replacement Rules
 
-Backseat.nvim offers two ways to define improvement rules:
-
-#### 1. Replacement Rules (Simple Substitutions)
-
-For straightforward command substitutions, use replacement rules:
+The primary feature of backseat.nvim is instant feedback through replacement rules. Simply define command substitutions that will alert you immediately when you use inefficient commands:
 
 ```vim
 :BackseatReplacementRules
 ```
 
 This opens a buffer where you can define simple key-value pairs:
-- `go,gg` - suggests using `go` instead of `gg`
 - `w,<Right>` - suggests using `w` instead of arrow keys
 - `0,<Home>` - suggests using `0` instead of Home key
+- `gg,<C-Home>` - suggests using `gg` instead of Ctrl+Home
+- `ge,be` - suggests using `ge` instead of `be` for consistency
 
-Replacement rules provide **instant feedback** as you type, making them ideal for breaking specific bad habits.
+**Instant feedback**: As soon as you type a command that has a replacement rule, you'll get an immediate notification suggesting the better alternative. This is perfect for breaking specific bad habits quickly.
 
-#### 2. Model Instructions (Complex Patterns)
+### Advanced: AI-Powered Analysis (Optional)
 
-For more complex patterns and context-aware feedback, use model instructions:
+For users who want deeper insights into their Vim habits, backseat.nvim offers optional AI-powered analysis that can understand complex patterns and context:
 
 ```vim
 :BackseatModelInstructions
 ```
 
-This opens a buffer where you can write natural language instructions like:
+Write natural language instructions for the AI to analyze:
 - "Use `w` and `b` instead of holding `h` and `l`"
 - "Prefer `f` and `t` motions over repeated `w`"
 - "Use `ci{` instead of `di{i`"
 - "Avoid excessive visual mode for simple operations"
 
-Model instructions are analyzed periodically by AI and can understand complex patterns and context.
+The AI will periodically analyze your command history and provide feedback on complex patterns that simple replacement rules can't catch.
 
-Both settings are automatically saved and persist between sessions.
+Both replacement rules and model instructions are automatically saved and persist between sessions.
 
 ### Commands
 
+#### Core Commands
 | Command | Description |
 |---------|-------------|
 | `:BackseatReplacementRules` | Open/edit simple replacement rules (instant feedback) |
+| `:ShowCommandHistory` | Display recent command history |
+
+#### AI Analysis Commands (Optional)
+| Command | Description |
+|---------|-------------|
 | `:BackseatModelInstructions` | Open/edit AI-analyzed instructions (periodic feedback) |
 | `:BackseatAnalyze` | Manually trigger AI analysis of recent commands |
 | `:BackseatStartAnalysis` | Start periodic automatic analysis |
 | `:BackseatStopAnalysis` | Stop periodic automatic analysis |
-| `:ShowCommandHistory` | Display recent command history |
 | `:BackseatSelectModel` | Select which AI model to use |
 | `:BackseatRefreshModels` | Refresh available Ollama models |
 
 ## How It Works
 
-1. The plugin monitors your normal mode keystrokes and builds a command history
-2. **Instant feedback**: Replacement rules are checked on every keystroke for immediate notifications
-3. **Periodic analysis**: Every `analysis_interval` seconds, recent commands are sent to the AI model
-4. The AI analyzes commands against your model instructions for complex pattern matching
-5. If you're deviating from your desired habits, you get a notification with terse feedback
-6. If your commands align with your instructions, no notification is shown
+### Replacement Rules (Primary Feature)
+1. The plugin monitors your normal mode keystrokes
+2. Each keystroke is instantly checked against your replacement rules
+3. If a match is found, you get an immediate notification with the suggested improvement
+4. No API calls needed - works completely offline for instant feedback
+
+### AI Analysis (Optional Enhancement)
+1. Command history is built from your keystrokes
+2. Every `analysis_interval` seconds, recent commands are sent to the AI model
+3. The AI analyzes commands against your model instructions for complex pattern matching
+4. If patterns are detected that violate your instructions, you receive contextual feedback
 
 ## Example Instructions
 
@@ -174,13 +181,17 @@ When navigating between words, prefer f/F/t/T over multiple w/b commands
 
 ## Cost
 
-backseat.nvim is designed to be extremely cost-effective. It uses Gemini 2.0 Flash by default, which is one of the most affordable AI models available. Even with the generous assumption that one is in Neovim normal mode 6 hours a day, backseat.nvim will cost only ~$0.01 per day.
+**Replacement rules are completely free** - they work offline with no API calls.
+
+For optional AI analysis: backseat.nvim is designed to be extremely cost-effective. It uses Gemini 2.0 Flash by default, which is one of the most affordable AI models available. Even with the generous assumption that one is in Neovim normal mode 6 hours a day, AI analysis will cost only ~$0.01 per day.
 
 ## Privacy
 
-- Only your command keystrokes and custom instructions are sent to the API
-- No file contents or sensitive data are transmitted
-- Commands are processed in batches and cleared after analysis
+- **Replacement rules work completely offline** - no data is sent anywhere
+- For AI analysis (if enabled):
+  - Only command keystrokes and custom instructions are sent to the API
+  - No file contents or sensitive data are transmitted
+  - Commands are processed in batches and cleared after analysis
 
 ## License
 
