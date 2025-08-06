@@ -543,13 +543,21 @@ function M.setup(opts)
 			vim.ui.select(MODELS, {
 				prompt = "Select model:",
 				format_item = function(item)
-					-- Add indicators for model types
+					-- Add indicators for model types and current selection
+					local suffix = ""
 					if item:match("^claude") then
-						return item .. " (Anthropic)"
+						suffix = " (Anthropic)"
 					elseif item:match("^gemini") then
-						return item .. " (Google)"
+						suffix = " (Google)"
 					else
-						return item .. " (Ollama)"
+						suffix = " (Ollama)"
+					end
+
+					-- Add indicator for current model
+					if item == M.config.model then
+						return "► " .. item .. suffix .. " [current]"
+					else
+						return "  " .. item .. suffix
 					end
 				end,
 			}, function(choice)
