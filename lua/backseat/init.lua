@@ -13,6 +13,7 @@ local MODELS = {
 M.config = {
 	anthropic_api_key = vim.env.ANTHROPIC_API_KEY,
 	gemini_api_key = vim.env.GEMINI_API_KEY,
+	ollama_host = vim.env.OLLAMA_HOST or "http://localhost:11434",
 	analysis_interval = 15,
 	max_history_size = 50,
 	max_tokens = 128,
@@ -158,6 +159,60 @@ local function make_google_request(prompt)
 	})
 end
 
+local function make_ollama_request(prompt)
+	local ok, curl = pcall(require, "plenary.curl")
+	if not ok then
+		vim.notify("Backseat: plenary.nvim is required for API requests", vim.log.levels.ERROR)
+		return
+	end
+
+	local url = M.config.ollama_host .. "/api/generate"
+
+	local headers = {
+		["content-type"] = "application/json",
+	}
+
+	local body = vim.json.encode({
+		model = M.config.model,
+		prompt = prompt,
+		stream = false,
+		options = {
+			num_predict = M.config.max_tokens,
+			temperature = 0.1,
+		},
+	})
+
+	curl.post(url, {
+		headers = headers,
+		body = body,
+		timeout = 30000,
+		callback = function(response)
+			if response.status == 200 then
+				local data = vim.json.decode(response.body)
+				if data and data.response then
+					local text = data.response
+					if not string.find(text or "", "No feedback") then
+						vim.schedule(function()
+							vim.notify(M.config.model .. " Analysis:\n" .. text, vim.log.levels.INFO)
+						end)
+					end
+				end
+			else
+				vim.schedule(function()
+					local error_msg = "Backseat: Ollama request failed - " .. response.status
+					if response.body then
+						local ok, err_data = pcall(vim.json.decode, response.body)
+						if ok and err_data.error then
+							error_msg = error_msg .. " (" .. err_data.error .. ")"
+						end
+					end
+					vim.notify(error_msg, vim.log.levels.ERROR)
+				end)
+			end
+		end,
+	})
+end
+
 local function make_anthropic_request(prompt)
 	if not M.config.anthropic_api_key then
 		vim.notify("Backseat: API key not configured", vim.log.levels.ERROR)
@@ -258,15 +313,21 @@ Analyze the commands against the instructions.
 
 	if M.config.model:match("^gemini") then
 		make_google_request(prompt)
-	else
+	elseif M.config.model:match("^claude") then
 		make_anthropic_request(prompt)
+	else
+		-- Assume Ollama for all other models
+		make_ollama_request(prompt)
 	end
 
 	M.command_history = {}
 end
 
 local function start_periodic_analysis()
-	if (M.config.anthropic_api_key or M.config.gemini_api_key) and M.config.analysis_interval > 0 then
+	if
+		(M.config.anthropic_api_key or M.config.gemini_api_key or M.config.ollama_host)
+		and M.config.analysis_interval > 0
+	then
 		timer:start(M.config.analysis_interval * 1000, M.config.analysis_interval * 1000, function()
 			vim.schedule(analyze_command_history)
 		end)
@@ -438,7 +499,7 @@ function M.setup(opts)
 	end, {})
 
 	-- Start periodic analysis if configured
-	if M.config.anthropic_api_key or M.config.gemini_api_key then
+	if M.config.anthropic_api_key or M.config.gemini_api_key or M.config.ollama_host then
 		start_periodic_analysis()
 	end
 end
