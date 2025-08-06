@@ -111,6 +111,10 @@ This opens a buffer where you can define simple key-value pairs:
 
 ### AI-Powered Analysis (Optional)
 
+
+https://github.com/user-attachments/assets/fe4a7d15-993a-4537-b934-e65935b40b12
+
+
 For users who want deeper insights into their Vim habits, backseat.nvim offers optional AI-powered analysis that can understand complex patterns and context:
 
 ```vim
