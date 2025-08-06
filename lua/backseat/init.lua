@@ -3,12 +3,14 @@ local M = {}
 M.command_history = {}
 M.instructions = "" -- Store user instructions
 
-local MODELS = {
+local DEFAULT_MODELS = {
 	"claude-3-5-haiku-latest",
 	"gemini-2.5-flash",
 	"gemini-2.5-flash-lite",
 	"gemini-2.0-flash",
 }
+
+local MODELS = vim.deepcopy(DEFAULT_MODELS)
 
 M.config = {
 	anthropic_api_key = vim.env.ANTHROPIC_API_KEY,
@@ -26,6 +28,39 @@ M.config = {
 local data_dir = vim.fn.stdpath("data") .. "/backseat"
 local instructions_file = data_dir .. "/instructions.txt"
 local timer = vim.loop.new_timer()
+
+-- Fetch available Ollama models
+local function fetch_ollama_models()
+	local ok, curl = pcall(require, "plenary.curl")
+	if not ok then
+		return
+	end
+
+	local url = (M.config.ollama_host or "http://localhost:11434") .. "/api/tags"
+
+	curl.get(url, {
+		timeout = 5000,
+		callback = function(response)
+			if response.status == 200 then
+				local success, data = pcall(vim.json.decode, response.body)
+				if success and data and data.models then
+					vim.schedule(function()
+						-- Reset to default models first
+						MODELS = vim.deepcopy(DEFAULT_MODELS)
+						-- Add Ollama models
+						for _, model in ipairs(data.models) do
+							if model.name then
+								-- Remove :latest suffix if present for cleaner display
+								local model_name = model.name:gsub(":latest$", "")
+								table.insert(MODELS, model_name)
+							end
+						end
+					end)
+				end
+			end
+		end,
+	})
+end
 
 -- Load saved instructions
 local function load_instructions()
@@ -342,6 +377,11 @@ function M.setup(opts)
 	-- Merge user config with defaults
 	M.config = vim.tbl_deep_extend("force", M.config, opts or {})
 
+	-- Fetch Ollama models if available
+	if M.config.ollama_host then
+		fetch_ollama_models()
+	end
+
 	-- Load saved instructions on setup
 	load_instructions()
 
@@ -484,18 +524,41 @@ function M.setup(opts)
 		vim.notify("Backseat: Stopped periodic analysis", vim.log.levels.INFO)
 	end, {})
 
+	vim.api.nvim_create_user_command("BackseatRefreshModels", function()
+		if M.config.ollama_host then
+			fetch_ollama_models()
+			vim.notify("Backseat: Refreshing Ollama models...", vim.log.levels.INFO)
+		else
+			vim.notify("Backseat: Ollama host not configured", vim.log.levels.WARN)
+		end
+	end, {})
+
 	vim.api.nvim_create_user_command("BackseatSelectModel", function()
-		vim.ui.select(MODELS, {
-			prompt = "Select model:",
-			format_item = function(item)
-				return item
-			end,
-		}, function(choice)
-			if choice then
-				M.config.model = choice
-				vim.notify("Backseat: Model changed to " .. choice, vim.log.levels.INFO)
-			end
-		end)
+		-- Refresh Ollama models before showing selection
+		if M.config.ollama_host then
+			fetch_ollama_models()
+		end
+		-- Small delay to allow models to be fetched
+		vim.defer_fn(function()
+			vim.ui.select(MODELS, {
+				prompt = "Select model:",
+				format_item = function(item)
+					-- Add indicators for model types
+					if item:match("^claude") then
+						return item .. " (Anthropic)"
+					elseif item:match("^gemini") then
+						return item .. " (Google)"
+					else
+						return item .. " (Ollama)"
+					end
+				end,
+			}, function(choice)
+				if choice then
+					M.config.model = choice
+					vim.notify("Backseat: Model changed to " .. choice, vim.log.levels.INFO)
+				end
+			end)
+		end, 100)
 	end, {})
 
 	-- Start periodic analysis if configured
