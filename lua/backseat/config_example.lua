@@ -8,6 +8,9 @@ return {
 			-- Your Gemini API key
 			gemini_api_key = vim.env.GEMINI_API_KEY or "your-api-key-here",
 
+			-- Ollama host for local models (optional)
+			ollama_host = vim.env.OLLAMA_HOST or "http://localhost:11434",
+
 			-- Analysis interval in seconds (default: 15)
 			analysis_interval = 15,
 

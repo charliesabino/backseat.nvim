@@ -42,31 +42,34 @@ A Neovim plugin that provides instant feedback for command improvements with cus
 Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
-{
-    "charliesabino/backseat.nvim",
-    dependencies = { "nvim-lua/plenary.nvim" },
-    config = function()
-        require("backseat").setup({
-            -- Your Anthropic API key
-            api_key = vim.env.ANTHROPIC_API_KEY or "your-api-key-here",
-            
-            -- Analysis interval in seconds (default: 15)
-            analysis_interval = 15,
-            
-            -- Maximum command history size to prevent memory issues
-            max_history_size = 50,
-            
-            -- Anthropic API endpoint (usually doesn't need changing)
-            endpoint = "https://api.anthropic.com/v1/messages",
-            
-            -- Model to use for analysis (default: claude-3-5-haiku for efficiency)
-            model = "claude-3-5-haiku-latest",
-            
-            -- Enable/disable normal mode monitoring
-            enable_monitoring = true,
-        })
-    end,
+return {
+ "charliesabino/backseat.nvim",
+ config = function()
+  require("backseat").setup({
+   -- Your Anthropic API key
+   anthropic_api_key = vim.env.ANTHROPIC_API_KEY or "your-api-key-here",
+
+   -- Your Gemini API key
+   gemini_api_key = vim.env.GEMINI_API_KEY or "your-api-key-here",
+
+   -- Ollama host for local models (optional)
+   ollama_host = vim.env.OLLAMA_HOST or "http://localhost:11434",
+
+   -- Analysis interval in seconds (default: 15)
+   analysis_interval = 15,
+
+   -- Maximum command history size to prevent memory issues
+   max_history_size = 50,
+
+   -- Model to use for analysis (default: gemini-2.0-flash, see https://sanand0.github.io/llmpricing/)
+   model = "gemini-2.0-flash",
+
+   -- Enable/Disable normal mode monitoring
+   enable_monitoring = true,
+  })
+ end,
 }
+
 ```
 
 ## Configuration
@@ -111,9 +114,10 @@ This opens a buffer where you can define simple key-value pairs:
 
 ### AI-Powered Analysis (Optional)
 
+<https://github.com/user-attachments/assets/fe4a7d15-993a-4537-b934-e65935b40b12>
 
-https://github.com/user-attachments/assets/fe4a7d15-993a-4537-b934-e65935b40b12
-
+> Caveat: I'm ngl this doesn't work that well. Models don't seem very good at analyzing strings of commands. But, the thought is to "build ahead of the model capabilities" -- the thought is that one day,
+models will be good enough to provide useful feedback on complex command patterns without needing user defined rules. A move to character-based tokenization will probably help with this.
 
 For users who want deeper insights into their Vim habits, backseat.nvim offers optional AI-powered analysis that can understand complex patterns and context:
 
