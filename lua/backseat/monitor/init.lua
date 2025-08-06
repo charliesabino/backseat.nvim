@@ -60,6 +60,10 @@ function M.create_command_monitor(config)
 			local last_time = M.last_notification_time[original] or 0
 			local time_diff = current_time - last_time
 
+			for _ = 1, #original do
+				table.remove(M.command_history)
+			end
+
 			if time_diff >= 3000 then
 				M.last_notification_time[original] = current_time
 				vim.schedule(function()
@@ -71,12 +75,6 @@ function M.create_command_monitor(config)
 						string.format("Backseat: Use '%s' instead of '%s'", replacement, original),
 						vim.log.levels.WARN
 					)
-				end)
-			else
-				vim.schedule(function()
-					for _ = 1, #original do
-						table.remove(M.command_history)
-					end
 				end)
 			end
 		end
