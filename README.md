@@ -2,7 +2,7 @@
 
 A Neovim plugin that provides instant feedback for command improvements with customizable replacement rules and optional AI-powered habit analysis.
 
-https://github.com/user-attachments/assets/62874323-30e8-4540-82bf-5ac0c4197af0
+<https://github.com/user-attachments/assets/62874323-30e8-4540-82bf-5ac0c4197af0>
 
 ## Table of Contents
 
@@ -13,7 +13,8 @@ https://github.com/user-attachments/assets/62874323-30e8-4540-82bf-5ac0c4197af0
   - [API Key](#api-key)
   - [Options](#options)
 - [Usage](#usage)
-  - [Setting Instructions](#setting-instructions)
+  - [Quick Start: Replacement Rules](#quick-start-replacement-rules)
+  - [AI-Powered Analysis (Optional)](#ai-powered-analysis-optional)
   - [Commands](#commands)
 - [How It Works](#how-it-works)
 - [Example Instructions](#example-instructions)
@@ -100,6 +101,7 @@ The primary feature of backseat.nvim is instant feedback through replacement rul
 ```
 
 This opens a buffer where you can define simple key-value pairs:
+
 - `w,<Right>` - suggests using `w` instead of arrow keys
 - `0,<Home>` - suggests using `0` instead of Home key
 - `gg,<C-Home>` - suggests using `gg` instead of Ctrl+Home
@@ -107,7 +109,7 @@ This opens a buffer where you can define simple key-value pairs:
 
 **Instant feedback**: As soon as you type a command that has a replacement rule, you'll get an immediate notification suggesting the better alternative. This is perfect for breaking specific bad habits quickly.
 
-### Advanced: AI-Powered Analysis (Optional)
+### AI-Powered Analysis (Optional)
 
 For users who want deeper insights into their Vim habits, backseat.nvim offers optional AI-powered analysis that can understand complex patterns and context:
 
@@ -116,6 +118,7 @@ For users who want deeper insights into their Vim habits, backseat.nvim offers o
 ```
 
 Write natural language instructions for the AI to analyze:
+
 - "Use `w` and `b` instead of holding `h` and `l`"
 - "Prefer `f` and `t` motions over repeated `w`"
 - "Use `ci{` instead of `di{i`"
@@ -128,12 +131,14 @@ Both replacement rules and model instructions are automatically saved and persis
 ### Commands
 
 #### Core Commands
+
 | Command | Description |
 |---------|-------------|
 | `:BackseatReplacementRules` | Open/edit simple replacement rules (instant feedback) |
 | `:ShowCommandHistory` | Display recent command history |
 
 #### AI Analysis Commands (Optional)
+
 | Command | Description |
 |---------|-------------|
 | `:BackseatModelInstructions` | Open/edit AI-analyzed instructions (periodic feedback) |
@@ -146,12 +151,14 @@ Both replacement rules and model instructions are automatically saved and persis
 ## How It Works
 
 ### Replacement Rules (Primary Feature)
+
 1. The plugin monitors your normal mode keystrokes
 2. Each keystroke is instantly checked against your replacement rules
 3. If a match is found, you get an immediate notification with the suggested improvement
 4. No API calls needed - works completely offline for instant feedback
 
 ### AI Analysis (Optional Enhancement)
+
 1. Command history is built from your keystrokes
 2. Every `analysis_interval` seconds, recent commands are sent to the AI model
 3. The AI analyzes commands against your model instructions for complex pattern matching
@@ -160,6 +167,7 @@ Both replacement rules and model instructions are automatically saved and persis
 ## Example Instructions
 
 ### Replacement Rules (in :BackseatReplacementRules)
+
 ```
 w,<Right>
 b,<Left>
@@ -170,6 +178,7 @@ ge,be
 ```
 
 ### Model Instructions (in :BackseatModelInstructions)
+
 ```
 Avoid using arrow keys, use hjkl instead
 Use text objects (iw, i", i{) instead of visual mode selection
